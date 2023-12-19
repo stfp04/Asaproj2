@@ -5,17 +5,17 @@ using namespace std;
 
 struct dfs_node {
     int color;
-    int pi;
     int d;
-    int df;
+    int low;
 };
 
-void le_input(vector<vector<int>>& grafo){
+void le_input(vector<vector<int>>& grafo, vector<vector<int>>& grafoT){
     int n, m;
     if(!scanf("%d %d", &n, &m))
         exit(EXIT_FAILURE);
 
     grafo = vector<vector<int>>(n, vector<int>());
+    grafoT = vector<vector<int>>(n, vector<int>());
 
     for(int i = 0; i < m; i++){
         int x, y;
@@ -23,55 +23,70 @@ void le_input(vector<vector<int>>& grafo){
             exit(EXIT_FAILURE);
 
         grafo[x - 1].push_back(y - 1);
+        grafoT[y - 1].push_back(x - 1);
     }
 }
 
-int dfs_aux(vector<vector<int>> &grafo, vector<dfs_node> &nodes, int v) {
-    stack<int> stack;
-    stack.push(v);
-    
-    int time = 0, maximo = 0;
-    while (!stack.empty()) { 
-        int v = stack.top();
-        stack.pop();
-        bool end = true;
-        nodes[v - 1].color = 1;
-        nodes[v - 1].d = time;
-        time += 1;
-        for (unsigned int i = 0; i < grafo[v - 1].size(); i++) {
-            int vertice = grafo[v - 1][i];
-            if (nodes[vertice - 1].color == 0) {
-                end = false;
-                stack.push(vertice);
+int dfs(vector<vector<int>> &grafo, vector<dfs_node> &nodes, int v) {
+    stack<int> stackSCC;
+    stack<int> stackDFS;
+    vector<bool> onStack(grafo.size(), false);
+
+    stackDFS.push(v);
+    stackSCC.push(v);    
+    int id = 0;
+    while (!stackDFS.empty()) { 
+        int ve = stackDFS.top();
+        stackDFS.pop();
+
+        nodes[ve].color++;
+        nodes[ve].d = id++;
+        nodes[ve].low = id;
+        for (unsigned int i = 0; i < grafo[ve].size(); i++) {
+            int vertice = grafo[ve][i];
+            if (nodes[vertice].color == 0) {
+                stackDFS.push(vertice);
+                stackSCC.push(vertice);
+                onStack[vertice] = true;
             }
-            else if(nodes[v - 1].d > nodes[vertice - 1].d) {
-                end = false;
-                stack.push(vertice);
-            }
-        }
-        if(end == true) {
-            nodes[v - 1].df = time;
-            if(maximo < nodes[v - 1].df)
-                maximo = nodes[v - 1].df;
+            else if(onStack[vertice])
+                nodes[ve].low = min(nodes[vertice].low, nodes[ve].low);
         }
     }
-    return maximo;
+
+    while (!stackSCC.empty()) { 
+        int ve = stackSCC.top();
+        stackSCC.pop();
+
+        onStack[ve] = true;
+        for (unsigned int i = 0; i < grafo[ve].size(); i++) {
+            int vertice = grafo[ve][i];
+            if (nodes[vertice].color == 0) {
+                onStack[vertice] = true;
+            }
+            else if(onStack[vertice])
+                nodes[ve].low = min(nodes[vertice].low, nodes[ve].low);
+        }
+    }
+    
+
+    return 0;
 }
 
 int maxValue(vector<vector<int>> &grafo) {
-    vector<dfs_node> nodes = vector<dfs_node>(grafo.size(), {0, 0, 0, 0});
+    vector<dfs_node> nodes = vector<dfs_node>(grafo.size(), {0, 0, 0});
     int maximo = 0;
 
-    for(unsigned int i = 0; i < grafo.size(); i++) {
+    for(unsigned int i = 1; i < grafo.size(); i++) {
         if(nodes[i].color == 0)
-            maximo = max(maximo, dfs_aux(grafo, nodes, i + 1));
+            maximo = max(maximo, dfs(grafo, nodes, i + 1));
     }
-
     return maximo;
 }
 
 int main() {
     vector<vector<int>> grafo;
+    vector<vector<int>> grafoT;
     le_input(grafo);
     printf("%d\n", maxValue(grafo));
 }
