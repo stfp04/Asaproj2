@@ -87,6 +87,6 @@ int maxValue(vector<vector<int>> &grafo) {
 int main() {
     vector<vector<int>> grafo;
     vector<vector<int>> grafoT;
-    le_input(grafo);
+    le_input(grafo, grafoT);
     printf("%d\n", maxValue(grafo));
 }
